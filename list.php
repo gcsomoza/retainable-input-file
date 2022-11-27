@@ -7,7 +7,7 @@
     <title>Document</title>
 </head>
 <body>
-    
+    <a href="/">Go to Upload Form</a>
 </body>
 <script src="RetainableInputFile.js"></script>
 <script>

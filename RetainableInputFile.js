@@ -1,4 +1,8 @@
-function RetainableInputFile(querySelector = '') {
+function RetainableInputFile(querySelector = '', options = {}) {
+    const defaultOptions = {
+        displayImage: true,
+        defaultImage: '',
+    };
     const self = this;
 
     function dataURLtoFile(dataurl, filename) {
@@ -17,7 +21,9 @@ function RetainableInputFile(querySelector = '') {
         });
     }
 
-    function init() {
+    function initialize() {
+        options = {...defaultOptions, ...options};
+
         window.addEventListener('load', function(e) {
             if (!querySelector) return;
 
@@ -65,18 +71,28 @@ function RetainableInputFile(querySelector = '') {
         const id = retainableInputFile.getAttribute('id');
         if (!id) return;
 
+        self.displayDefaultImage(retainableInputFile);
+
         const filename = localStorage.getItem(`${id}_filename`);
         const fileurl = localStorage.getItem(`${id}_fileurl`);
-        if (filename && fileurl) {
-            let file = dataURLtoFile(fileurl, filename)
-            let list = new DataTransfer();
-            list.items.add(file);
-            retainableInputFile.files = list.files
+        if (!filename || !fileurl) return;
+
+        let file = dataURLtoFile(fileurl, filename)
+        let list = new DataTransfer();
+        list.items.add(file);
+        retainableInputFile.files = list.files;
+
+        if (options.displayImage) {
+            self.displayImage(retainableInputFile);
         }
     }
 
     self.storeChangedFile = function(retainableInputFile) {
         if (retainableInputFile.getAttribute('type') !== 'file') return;
+
+        if (retainableInputFile.files.length == 0) {
+            self.clearStoredFile(retainableInputFile);
+        }
 
         if (window.File && window.FileList && window.FileReader) {
             const reader = new FileReader();
@@ -91,7 +107,39 @@ function RetainableInputFile(querySelector = '') {
                 };
             }
         }
+
+        if (options.displayImage) {
+            self.displayImage(retainableInputFile);
+        }
     }
 
-    init();
+    self.displayImage = function(retainableInputFile) {
+        if (retainableInputFile.getAttribute('type') !== 'file') return;
+
+        if (!retainableInputFile.hasAttribute('data-target-img')) return;
+
+        const image = document.querySelector(retainableInputFile.getAttribute('data-target-img'));
+        if (!image) return;
+
+        if (retainableInputFile.files.length > 0) {
+            image.src = URL.createObjectURL(retainableInputFile.files[0]);
+        }
+    }
+
+    self.displayDefaultImage = function(retainableInputFile) {
+        try {
+            if (retainableInputFile.getAttribute('type') !== 'file') return;
+
+            if (!retainableInputFile.hasAttribute('data-target-img')) return;
+
+            const image = document.querySelector(retainableInputFile.getAttribute('data-target-img'));
+            if (!image) return;
+
+            image.src = options.defaultImage;
+        } catch (error) {
+            console.error(error);
+        }
+    }
+
+    initialize();
 }
